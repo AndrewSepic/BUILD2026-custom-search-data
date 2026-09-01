@@ -3,6 +3,8 @@ import type { Suggestion } from "./SearchBox"
 import type { Dispatch, SetStateAction } from 'react'
 import airportUrl from "./assets/airport.svg"
 import markerUrl from "./assets/marker.svg"
+import rptUrl from "./assets/rpt.svg"
+import wptUrl from "./assets/wpt.svg"
 
 type SearchSuggestionProps = {
     suggestion: Suggestion,
@@ -10,6 +12,8 @@ type SearchSuggestionProps = {
 }
 
 const SearchSuggestion = ({suggestion, setSelectedResult}: SearchSuggestionProps) => {
+
+  const icon = chained ternary?
   return (
     <div 
       className="flex flex-col hover:bg-gray-200 hover:cursor-pointer px-3 py-2"
@@ -17,7 +21,7 @@ const SearchSuggestion = ({suggestion, setSelectedResult}: SearchSuggestionProps
         <div className="flex items-center">
             <img 
                 className="size-4 mr-1"
-                src={ suggestion.feature_type === 'airport' ? airportUrl : markerUrl}
+                src={icon}
                 alt="Feature Icon"/>
           <div className="font-bold text-sm">{suggestion.name}</div>
         </div>

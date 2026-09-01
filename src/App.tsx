@@ -4,6 +4,7 @@ import SearchBoxContainer from './SearchBoxContainer'
 import { buildAirportIndex, searchAirports } from './utils/search'
 
 import type { AirportIndex } from './utils/search'
+import type { WaypointFeature } from './utils/search'
 
 import 'mapbox-gl/dist/mapbox-gl.css'
 import './App.css'
@@ -14,13 +15,14 @@ const center:[number, number] = [-71.05953, 42.36290]
 function App() {
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const mapContainerRef = useRef<HTMLDivElement>(null)
+  const waypointsRef = useRef<WaypointFeature[]>([])
   const airportDataRef = useRef(null)
   const [ airportIndex, setAirportIndex ] = useState<AirportIndex>(new Map())
 
   useEffect(() => {
     mapRef.current = new mapboxgl.Map({
       accessToken,
-      style: 'mapbox://styles/mapbox/standard',
+      style: 'mapbox://styles/andrewsepic1/cmt8slwku00ni01s48u7qeb3g',
       container: mapContainerRef.current!,
       center,
       zoom: 13,
@@ -56,6 +58,16 @@ function App() {
 
     loadAirportData();
 
+    mapRef.current.on('moveend', () => {
+      // Query the Waypoints visible (in the source layer) in the map.
+      const visibleWaypoints = mapRef.current?.querySourceFeatures('mapbox://andrewsepic1.q4ksvj713qhc', {
+          sourceLayer: 'b6381281a2ea94ea5992',
+      });
+
+      console.log(visibleWaypoints)
+      waypointsRef.current =  visibleWaypoints as unknown as WaypointFeature[]
+    })
+
   
     return () => {
       mapRef.current?.remove()
@@ -74,6 +86,7 @@ function App() {
             <SearchBoxContainer
                 mapRef={mapRef.current}
                 airportIndex={airportIndex}
+                waypointsRef={waypointsRef.current}
             />
         </div>
         <div id='map-container' ref={mapContainerRef} />
