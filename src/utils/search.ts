@@ -70,6 +70,7 @@ export function buildAirportIndex(airportData: FeatureCollection): Map<string, A
 export type AirportIndex = Map<string, AirportFeature[]>
 
 export async function searchAirports(query:string, iataIndex: Map<string, AirportFeature[]>, maxResults = 5) {
+    console.log("airports runs")
   if(!query || query.length < 2) return []; // Only search if query is 2+ chars
 
   const q = query.toUpperCase().trim()
@@ -77,7 +78,7 @@ export async function searchAirports(query:string, iataIndex: Map<string, Airpor
   // Use index for IATA lookup (super fast)
   if(q.length <= 4 && iataIndex) {
     const matches = iataIndex.get(q) || []
-    
+    console.log("airport Matches", matches)
     return matches  
       .slice(0, maxResults)
       .map(formatAirportResult)
@@ -88,16 +89,19 @@ export async function searchAirports(query:string, iataIndex: Map<string, Airpor
 }
 
 export async function searchWaypoints(query:string, waypoints: WaypointFeature[], maxResults = 3){
+  console.log("waypoints runs")
   if(!query || query.length < 2) return []
   const q = query.toUpperCase().trim()
 
   // Filter waypoints for queries up to 5 chars
   if(q.length <= 5 && waypoints) {
+    console.log('waypoints:', waypoints)
     const filtered = waypoints
       .filter(feature => feature.properties.IDENT.includes(q))
       .slice(0, maxResults)
       .map(formatWaypointResult)
 
+       console.log("waypoint Matches", filtered)
     return filtered
   }
 
@@ -130,10 +134,6 @@ function formatWaypointResult(feature: WaypointFeature):WaypointSuggestion {
   }
 }
 
-export function isAirportSuggestion(s: Suggestion): s is AirportSuggestion {
-  return s.feature_type === 'airport'
-}
-
-export function isWaypointSuggestion(s: Suggestion): s is WaypointSuggestion {
-  return s.feature_type === 'waypoint'
+export function isLocalSuggestion(s: Suggestion): s is AirportSuggestion | WaypointSuggestion {
+  return s.feature_type === 'airport' || s.feature_type === 'waypoint'
 }

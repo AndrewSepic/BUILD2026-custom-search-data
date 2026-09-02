@@ -47,9 +47,6 @@ function App() {
 
         const iataIndex = buildAirportIndex(json)
         setAirportIndex(iataIndex)
-          // Test the search function
-        const testResults = await searchAirports('ADK', iataIndex, 3)
-        console.log('Search results for "ADK":', testResults)
 
       } catch(err) {
         console.error('Failed to build index:', err)
@@ -64,7 +61,6 @@ function App() {
           sourceLayer: 'b6381281a2ea94ea5992',
       });
 
-      console.log(visibleWaypoints)
       waypointsRef.current =  visibleWaypoints as unknown as WaypointFeature[]
     })
 
@@ -84,9 +80,9 @@ function App() {
             position: 'absolute',
             zIndex: 10 }}>
             <SearchBoxContainer
-                mapRef={mapRef.current}
+                mapRef={mapRef}
                 airportIndex={airportIndex}
-                waypointsRef={waypointsRef.current}
+                waypointsRef={waypointsRef}
             />
         </div>
         <div id='map-container' ref={mapContainerRef} />

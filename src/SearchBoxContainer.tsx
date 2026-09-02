@@ -2,13 +2,13 @@ import React, { useState, useEffect, useRef } from "react"
 import { SearchBoxCore, SearchSession} from "@mapbox/search-js-core"
 import SearchBox from "./SearchBox"
 import { Map } from 'mapbox-gl'
-import { isAirportSuggestion, isWaypointSuggestion, searchAirports, searchWaypoints } from "./utils/search"
+import { isLocalSuggestion, searchAirports, searchWaypoints } from "./utils/search"
 
-import type { ChangeEvent } from "react"
+import type { ChangeEvent, RefObject } from "react"
 import type { Suggestion } from "./SearchBox"
 import type { AirportIndex, WaypointFeature } from "./utils/search"
 
-const SearchBoxContainer = ({mapRef, airportIndex, waypointsRef }: { mapRef: Map | null, airportIndex: AirportIndex, waypointsRef: WaypointFeature[] | []}) => {
+const SearchBoxContainer = ({mapRef, airportIndex, waypointsRef }: { mapRef: RefObject<Map | null>, airportIndex: AirportIndex, waypointsRef: RefObject<WaypointFeature[]> }) => {
     const [searchInput, setSearchInput] = useState('')
     const [suggestions, setSuggestions] = useState<Suggestion[]>([])
     const [selectedResult, setSelectedResult] = useState<Suggestion | null>(null)
@@ -44,12 +44,14 @@ const SearchBoxContainer = ({mapRef, airportIndex, waypointsRef }: { mapRef: Map
                 types: new Set(['address', 'place', 'street', 'locality', 'country']),
                     }),
                     searchAirports(searchInput, airportIndex, 5),
-                    searchWaypoints(searchInput, waypointsRef)
+                    searchWaypoints(searchInput, waypointsRef.current)
                 ])
 
                 if (stale) return // a newer search superseded this one — ignore
             
-                if (searchBoxResults?.suggestions.length === 0 && airportResults.length === 0) {
+                if (searchBoxResults?.suggestions.length === 0 
+                    && airportResults.length === 0
+                    && waypointResults.length ===0 ) {
                     setSuggestions([])
                     return
                 }
@@ -60,13 +62,14 @@ const SearchBoxContainer = ({mapRef, airportIndex, waypointsRef }: { mapRef: Map
                 ...(waypointResults || []),
                 ...(searchBoxResults?.suggestions || [])
                 ]
+                console.log("combined:", combined)
 
                 setSuggestions(combined)
 
             } catch(err) {
                 console.error("Search error:", err)
             }
-        }, 100)
+        }, 250)
 
         return () => {
             stale = true
@@ -84,7 +87,7 @@ const SearchBoxContainer = ({mapRef, airportIndex, waypointsRef }: { mapRef: Map
 
             let feature
             // if suggestion is an airport
-            if(isAirportSuggestion(selectedResult) || isWaypointSuggestion(selectedResult)) {
+            if(isLocalSuggestion(selectedResult)) {
                 feature = {
                     type: 'Feature',
                     properties: selectedResult,
@@ -99,8 +102,11 @@ const SearchBoxContainer = ({mapRef, airportIndex, waypointsRef }: { mapRef: Map
                 feature = features[0]
             }
             
+            const map = mapRef.current
+
+            if(!map) return
             // Fly map to result
-            mapRef.flyTo({
+            map.flyTo({
             center: feature.geometry.coordinates,
             zoom: 14
             })

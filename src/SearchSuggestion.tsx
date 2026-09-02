@@ -11,9 +11,22 @@ type SearchSuggestionProps = {
     setSelectedResult: Dispatch<SetStateAction<Suggestion | null>>
 }
 
+const getIcon = (s: Suggestion) => {
+  const ICONS:Record<string, string> = {
+    'airport': airportUrl,
+    'waypoint:RPT': rptUrl,
+    'waypoint:WPT': wptUrl
+  }
+
+  const key = 'type_code' in s
+    ? `waypoint:${s.type_code}` 
+    : s.feature_type
+
+  return ICONS[key] ?? markerUrl
+}
+
 const SearchSuggestion = ({suggestion, setSelectedResult}: SearchSuggestionProps) => {
 
-  const icon = chained ternary?
   return (
     <div 
       className="flex flex-col hover:bg-gray-200 hover:cursor-pointer px-3 py-2"
@@ -21,7 +34,7 @@ const SearchSuggestion = ({suggestion, setSelectedResult}: SearchSuggestionProps
         <div className="flex items-center">
             <img 
                 className="size-4 mr-1"
-                src={icon}
+                src={getIcon(suggestion)}
                 alt="Feature Icon"/>
           <div className="font-bold text-sm">{suggestion.name}</div>
         </div>

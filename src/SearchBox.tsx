@@ -1,7 +1,7 @@
 import React from "react"
 import type { ChangeEvent, Dispatch, SetStateAction } from 'react'
 import SearchSuggestion from "./SearchSuggestion"
-import type { AirportSuggestion, WaypointFeature, WaypointSuggestion } from "./utils/search"
+import type { AirportSuggestion, WaypointSuggestion } from "./utils/search"
 import type { SearchBoxSuggestion } from "@mapbox/search-js-core"
 
 export type Suggestion = SearchBoxSuggestion | AirportSuggestion | WaypointSuggestion
