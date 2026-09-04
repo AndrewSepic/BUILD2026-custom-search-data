@@ -2,6 +2,7 @@ import React from "react"
 import type { Suggestion } from "./SearchBox"
 import type { Dispatch, SetStateAction } from 'react'
 import airportUrl from "./assets/airport.svg"
+import airplaneUrl from "./assets/airplane.svg"
 import markerUrl from "./assets/marker.svg"
 import rptUrl from "./assets/rpt.svg"
 import wptUrl from "./assets/wpt.svg"
@@ -13,6 +14,7 @@ type SearchSuggestionProps = {
 
 const getIcon = (s: Suggestion) => {
   const ICONS:Record<string, string> = {
+    'plane': airplaneUrl,
     'airport': airportUrl,
     'waypoint:RPT': rptUrl,
     'waypoint:WPT': wptUrl
