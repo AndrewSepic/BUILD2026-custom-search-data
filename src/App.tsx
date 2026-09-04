@@ -25,13 +25,13 @@ function App() {
       style: 'mapbox://styles/andrewsepic1/cmt8slwku00ni01s48u7qeb3g',
       container: mapContainerRef.current!,
       center,
-      zoom: 13,
+      zoom: 12,
       config: {
         basemap: {
           lightPreset: 'night',
           theme: 'monochrome',
           showRoadLabels: false,
-          //showTransitLabels: false,
+          // showTransitLabels: false,
           //showPointOfInterestLabels: false
         }
       }
