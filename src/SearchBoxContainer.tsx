@@ -44,16 +44,29 @@ const SearchBoxContainer = ({map, airportIndex }: SearchBoxContainerProps) => {
         const timeoutId = setTimeout(async () => {
         try {
             // TODO Search both sources in parallel w Promise.all()
+            const [ searchBoxResults, airportResults] = await Promise.all([
+                sessionRef.current?.suggest(searchInput, {
+                types: new Set(['address', 'place', 'street', 'locality', 'country']),
+                }),
+                searchAirports(searchInput, airportIndex)
+            ])
             
             if (stale) return // a newer search superseded this one — ignore
           
             // If no suggestions, setSuggestions([]) - empt array
-           
+           if(searchBoxResults?.suggestions.length === 0 || airportResults.length === 0) {
+            setSuggestions([])
+            return
+           }
 
             // Merge results: airports first, then Mapbox results
-            const combined = []
+            const combined = [
+                ...(airportResults || []),
+                ...(searchBoxResults?.suggestions || [])
+            ]
 
             // setSuggestions w combined
+            setSuggestions(combined)
 
         } catch(err) {
             console.error("Search error:", err)
@@ -76,10 +89,20 @@ const SearchBoxContainer = ({map, airportIndex }: SearchBoxContainerProps) => {
 
             let feature
             // TODO if suggestion is an airport 
-            
-            // suggestion is a normal Search Box suggestion - retrieve feataure and extract coordinates
-            const { features } = await session.retrieve(selectedResult)
-            feature = features[0]
+            if(isAirportSuggestion(selectedResult)) {
+                feature = {
+                    type: 'Feature',
+                    properties: selectedResult.original_data,
+                    geometry: {
+                        type: 'Point',
+                        coordinates: selectedResult.coordinates
+                    }
+                }
+            } else {
+                // suggestion is a normal Search Box suggestion - retrieve feataure and extract coordinates
+                const { features } = await session.retrieve(selectedResult)
+                feature = features[0]
+            }
             
             
             // Fly map to result
