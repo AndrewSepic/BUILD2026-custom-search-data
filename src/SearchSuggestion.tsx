@@ -3,6 +3,22 @@ import type { Suggestion } from "./SearchBox"
 import type { Dispatch, SetStateAction } from 'react'
 import airportUrl from "./assets/airport.svg"
 import markerUrl from "./assets/marker.svg"
+import rptUrl from "./assets/rpt.svg"
+import wptUrl from "./assets/wpt.svg"
+
+const getIcon = (s: Suggestion) => {
+  const ICONS:Record<string, string> = {
+    'airport': airportUrl,
+    'waypoint:RPT': rptUrl,
+    'waypoint:WPT': wptUrl
+  }
+
+  const key = 'type_code' in s
+    ? `waypoint:${s.type_code}` 
+    : s.feature_type
+
+  return ICONS[key] ?? markerUrl
+}
 
 type SearchSuggestionProps = {
     suggestion: Suggestion,
@@ -17,7 +33,7 @@ const SearchSuggestion = ({suggestion, setSelectedResult}: SearchSuggestionProps
         <div className="flex items-center">
             <img 
                 className="size-4 mr-1"
-                src={ suggestion.feature_type === 'airport' ? airportUrl : markerUrl}
+                src={getIcon(suggestion)}
                 alt="Feature Icon"/>
           <div className="font-bold text-sm">{suggestion.name}</div>
         </div>

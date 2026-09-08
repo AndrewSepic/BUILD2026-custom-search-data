@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react'
 import mapboxgl from 'mapbox-gl'
 import SearchBoxContainer from './SearchBoxContainer'
-import { buildAirportIndex, type AirportIndex } from './utils/search'
+import { buildAirportIndex, type AirportIndex, type WaypointFeature } from './utils/search'
 
 import 'mapbox-gl/dist/mapbox-gl.css'
 import './App.css'
@@ -12,6 +12,7 @@ const center:[number, number] = [-71.05953, 42.36290]
 function App() {
   const mapRef = useRef<mapboxgl.Map | undefined>(undefined)
   const mapContainerRef = useRef<HTMLDivElement>(null)
+  const waypointsRef = useRef<WaypointFeature[]>([])
   const [mapLoaded, setMapLoaded] = useState(false)
 
   const airportDataRef = useRef(null)
@@ -20,7 +21,7 @@ function App() {
   useEffect(() => {
     mapRef.current = new mapboxgl.Map({
       accessToken,
-      style: 'mapbox://styles/mapbox/standard',
+      style: 'mapbox://styles/andrewsepic1/cmt8slwku00ni01s48u7qeb3g',
       container: mapContainerRef.current!,
       center,
       zoom: 13,
@@ -55,6 +56,14 @@ function App() {
       setMapLoaded(true);
     });
 
+    // Query the waypoints in the source Layer bounded within viewport
+    mapRef.current.on('moveend', () => {
+      const visibleWaypoints = mapRef.current?.querySourceFeatures('mapbox://andrewsepic1.q4ksvj713qhc',
+        { sourceLayer: 'b6381281a2ea94ea5992'})
+
+        waypointsRef.current = visibleWaypoints as unknown as WaypointFeature[]
+    })
+
     return () => {
       mapRef.current?.remove()
     }
@@ -70,18 +79,10 @@ function App() {
             position: 'absolute',
             zIndex: 10 }}>
 
-            {/* Use of customSearch Prop to pass in custom search data
-            <SearchBox
-                accessToken={accessToken}
-                map={mapLoaded ? mapRef.current : undefined}
-                componentOptions={{
-                  customSearch: searchAirports
-                }}
-            /> */}
-
             <SearchBoxContainer 
               map={mapLoaded ? mapRef.current : undefined}
-              airportIndex={airportIndex}/>
+              airportIndex={airportIndex}
+              waypointsRef={waypointsRef}/>
 
         </div>
         <div id='map-container' ref={mapContainerRef} />

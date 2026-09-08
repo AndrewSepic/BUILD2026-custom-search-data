@@ -15,6 +15,15 @@ export type AirportFeature = {
     }
 }
 
+export type WaypointFeature = {
+    type: string,
+    properties: { COUNTRY:string, GLOBAL_ID:string, IDENT:string, LATITUDE:string, LONGITUDE:string, TYPE_CODE:string, STATE:string }
+    geometry: {
+        type: string,
+        coordinates: [number, number]
+    }
+}
+
 export type AirportSuggestion = {
     name: string,
     place_formatted: string,
@@ -22,6 +31,16 @@ export type AirportSuggestion = {
     feature_type: 'airport',
     coordinates: [number, number],
     original_data: AirportFeature
+}
+
+export type WaypointSuggestion = {
+    name: string,
+    mapbox_id: string,
+    type_code: string,
+    place_formatted: string,
+    feature_type: 'waypoint',
+    coordinates: [number, number],
+    original_data: WaypointFeature
 }
 
 export function buildAirportIndex(airportData: FeatureCollection): Map<string, AirportFeature[]> {
@@ -80,6 +99,37 @@ function formatAirportResult(feature: AirportFeature):AirportSuggestion {
   }
 }
 
-export function isAirportSuggestion(s: Suggestion): s is AirportSuggestion {
-  return s.feature_type === 'airport'
+export function isLocalSuggestion(s: Suggestion): s is AirportSuggestion | WaypointSuggestion {
+  return s.feature_type === 'airport' || s.feature_type === 'waypoint'
+}
+
+export async function searchWaypoints(query:string, waypoints: WaypointFeature[], maxResults = 3){
+  if(!query || query.length < 2) return []
+  const q = query.toUpperCase().trim()
+
+  // Filter waypoints for queries up to 5 chars
+  if(q.length <= 5 && waypoints) {
+    const filtered = waypoints
+      .filter(feature => feature.properties.IDENT.includes(q))
+      .slice(0, maxResults)
+      .map(formatWaypointResult)
+
+    return filtered
+  }
+
+  // else for longer queries
+  return []
+}
+
+function formatWaypointResult(feature: WaypointFeature):WaypointSuggestion {
+  const props = feature.properties
+  return {
+    name: `${props.IDENT}`,
+    mapbox_id: `waypoint_${props.IDENT}`,
+    place_formatted: `${props.TYPE_CODE} - ${props.STATE}`,
+    feature_type: 'waypoint',
+    type_code: props.TYPE_CODE,
+    coordinates: feature.geometry.coordinates,
+    original_data: feature
+  }
 }

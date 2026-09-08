@@ -2,18 +2,19 @@ import React, { useState, useEffect, useRef, type RefObject } from "react"
 import { SearchBoxCore, SearchSession} from "@mapbox/search-js-core"
 import SearchBox from "./SearchBox"
 import { Map } from 'mapbox-gl'
-import { isAirportSuggestion, searchAirports } from "./utils/search"
+import { isLocalSuggestion, searchAirports, searchWaypoints } from "./utils/search"
 
 import type { ChangeEvent } from "react"
 import type { Suggestion } from "./SearchBox"
-import type { AirportIndex } from "./utils/search"
+import type { AirportIndex, WaypointFeature } from "./utils/search"
 
 type SearchBoxContainerProps = {
     map: Map | undefined,
-    airportIndex: AirportIndex
+    airportIndex: AirportIndex,
+    waypointsRef: RefObject<WaypointFeature[]>
 }
 
-const SearchBoxContainer = ({map, airportIndex }: SearchBoxContainerProps) => {
+const SearchBoxContainer = ({map, airportIndex, waypointsRef }: SearchBoxContainerProps) => {
     const [searchInput, setSearchInput] = useState('')
     const [suggestions, setSuggestions] = useState<Suggestion[]>([])
     const [selectedResult, setSelectedResult] = useState<Suggestion | null>(null)
@@ -27,7 +28,8 @@ const SearchBoxContainer = ({map, airportIndex }: SearchBoxContainerProps) => {
     const createSearchSession = () => {
         // Initialize Search Core and Session
         const search = new SearchBoxCore({ 
-        accessToken: import.meta.env.VITE_MAPBOX_ACCESS_TOKEN 
+            accessToken: import.meta.env.VITE_MAPBOX_ACCESS_TOKEN,
+            country: 'US'
         })
         return new SearchSession(search)
     }
@@ -44,17 +46,20 @@ const SearchBoxContainer = ({map, airportIndex }: SearchBoxContainerProps) => {
         const timeoutId = setTimeout(async () => {
         try {
             // TODO Search both sources in parallel w Promise.all()
-            const [ searchBoxResults, airportResults] = await Promise.all([
+            const [ searchBoxResults, airportResults, waypointsResults] = await Promise.all([
                 sessionRef.current?.suggest(searchInput, {
                 types: new Set(['address', 'place', 'street', 'locality', 'country']),
                 }),
-                searchAirports(searchInput, airportIndex)
+                searchAirports(searchInput, airportIndex),
+                searchWaypoints(searchInput, waypointsRef.current)
             ])
-            
+ 
             if (stale) return // a newer search superseded this one — ignore
           
             // If no suggestions, setSuggestions([]) - empt array
-           if(searchBoxResults?.suggestions.length === 0 || airportResults.length === 0) {
+           if(searchBoxResults?.suggestions.length === 0 
+                && airportResults.length === 0
+                && waypointsResults.length === 0) {
             setSuggestions([])
             return
            }
@@ -62,8 +67,10 @@ const SearchBoxContainer = ({map, airportIndex }: SearchBoxContainerProps) => {
             // Merge results: airports first, then Mapbox results
             const combined = [
                 ...(airportResults || []),
+                ...(waypointsResults || []),
                 ...(searchBoxResults?.suggestions || [])
             ]
+           
 
             // setSuggestions w combined
             setSuggestions(combined)
@@ -89,10 +96,10 @@ const SearchBoxContainer = ({map, airportIndex }: SearchBoxContainerProps) => {
 
             let feature
             // TODO if suggestion is an airport 
-            if(isAirportSuggestion(selectedResult)) {
+            if(isLocalSuggestion(selectedResult)) {
                 feature = {
                     type: 'Feature',
-                    properties: selectedResult.original_data,
+                    properties: selectedResult.original_data.properties,
                     geometry: {
                         type: 'Point',
                         coordinates: selectedResult.coordinates
