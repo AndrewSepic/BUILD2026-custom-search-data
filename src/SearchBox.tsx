@@ -1,10 +1,10 @@
 import React from "react"
 import type { ChangeEvent, Dispatch, SetStateAction } from 'react'
 import SearchSuggestion from "./SearchSuggestion"
-import type { AirportSuggestion, WaypointSuggestion } from "./utils/search"
+import type { AirportSuggestion, PlaneSuggestion, WaypointSuggestion } from "./utils/search"
 import type { SearchBoxSuggestion } from "@mapbox/search-js-core"
 
-export type Suggestion = SearchBoxSuggestion | AirportSuggestion | WaypointSuggestion
+export type Suggestion = SearchBoxSuggestion | AirportSuggestion | WaypointSuggestion | PlaneSuggestion
 
 type SearchBoxProps = {
     searchInput: string,
@@ -25,7 +25,7 @@ const SearchBox = ({searchInput, handleChange, suggestions, setSelectedResult}: 
       />
 
       {suggestions.length > 0 && (
-        <div className="bg-white rounded-lg border border-gray-400 w-full shadow-sm mt-1">
+        <div className="bg-white rounded-lg border border-gray-400 w-full shadow-sm mt-1 overflow-hidden">
           {suggestions.map((suggestion, index) => (
                <SearchSuggestion 
                   key={index}

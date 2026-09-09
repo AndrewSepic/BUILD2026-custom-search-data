@@ -2,12 +2,14 @@ import React from "react"
 import type { Suggestion } from "./SearchBox"
 import type { Dispatch, SetStateAction } from 'react'
 import airportUrl from "./assets/airport.svg"
+import airplaneUrl from "./assets/airplane.svg"
 import markerUrl from "./assets/marker.svg"
 import rptUrl from "./assets/rpt.svg"
 import wptUrl from "./assets/wpt.svg"
 
 const getIcon = (s: Suggestion) => {
   const ICONS:Record<string, string> = {
+    'plane': airplaneUrl,
     'airport': airportUrl,
     'waypoint:RPT': rptUrl,
     'waypoint:WPT': wptUrl
@@ -20,6 +22,22 @@ const getIcon = (s: Suggestion) => {
   return ICONS[key] ?? markerUrl
 }
 
+const getAccentColor = (s: Suggestion) => {
+    const COLORS:Record<string, string> = {
+    'plane': 'border-l-cyan-400',
+    'airport':'border-l-emerald-400',
+    'waypoint:RPT': 'border-l-fuchsia-400',
+    'waypoint:WPT': 'border-l-fuchsia-400'
+  }
+
+  const key = 'type_code' in s
+    ? `waypoint:${s.type_code}` 
+    : s.feature_type
+
+  return COLORS[key] ? `border-l-4 ${COLORS[key]}`: ''
+
+}
+
 type SearchSuggestionProps = {
     suggestion: Suggestion,
     setSelectedResult: Dispatch<SetStateAction<Suggestion | null>>
@@ -28,7 +46,7 @@ type SearchSuggestionProps = {
 const SearchSuggestion = ({suggestion, setSelectedResult}: SearchSuggestionProps) => {
   return (
     <div 
-      className="flex flex-col hover:bg-gray-200 hover:cursor-pointer px-3 py-2"
+      className={`flex flex-col hover:bg-gray-200 hover:cursor-pointer px-3 py-2 ${getAccentColor(suggestion)}`}
       onClick={() => setSelectedResult(suggestion)}>
         <div className="flex items-center">
             <img 

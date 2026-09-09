@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef, type RefObject } from "react"
 import { SearchBoxCore, SearchSession} from "@mapbox/search-js-core"
 import SearchBox from "./SearchBox"
 import { Map } from 'mapbox-gl'
-import { isLocalSuggestion, searchAirports, searchWaypoints } from "./utils/search"
+import { isLocalSuggestion, searchAirports, searchWaypoints, isPlaneSuggestion, fetchPlaneTrace, searchCallsign } from "./utils/search"
+import { renderPlane } from "./utils/mapLayers"
 
 import type { ChangeEvent } from "react"
 import type { Suggestion } from "./SearchBox"
@@ -46,12 +47,13 @@ const SearchBoxContainer = ({map, airportIndex, waypointsRef }: SearchBoxContain
         const timeoutId = setTimeout(async () => {
         try {
             // TODO Search both sources in parallel w Promise.all()
-            const [ searchBoxResults, airportResults, waypointsResults] = await Promise.all([
+            const [ searchBoxResults, airportResults, waypointsResults, callSignResults] = await Promise.all([
                 sessionRef.current?.suggest(searchInput, {
                 types: new Set(['address', 'place', 'street', 'locality', 'country']),
                 }),
                 searchAirports(searchInput, airportIndex),
-                searchWaypoints(searchInput, waypointsRef.current)
+                searchWaypoints(searchInput, waypointsRef.current),
+                searchCallsign(searchInput)
             ])
  
             if (stale) return // a newer search superseded this one — ignore
@@ -59,13 +61,15 @@ const SearchBoxContainer = ({map, airportIndex, waypointsRef }: SearchBoxContain
             // If no suggestions, setSuggestions([]) - empt array
            if(searchBoxResults?.suggestions.length === 0 
                 && airportResults.length === 0
-                && waypointsResults.length === 0) {
+                && waypointsResults.length === 0
+                && callSignResults.length === 0) {
             setSuggestions([])
             return
            }
 
             // Merge results: airports first, then Mapbox results
             const combined = [
+                ...(callSignResults || []),
                 ...(airportResults || []),
                 ...(waypointsResults || []),
                 ...(searchBoxResults?.suggestions || [])
@@ -93,6 +97,21 @@ const SearchBoxContainer = ({map, airportIndex, waypointsRef }: SearchBoxContain
             const session = sessionRef.current
             // guard refs
             if(!session || !map ) return 
+
+             // Plane suggestions already carry their coordinates from the callsign lookup -
+            // no retrieve() call needed, just fly there and draw the plane + its recent trace.
+            if(isPlaneSuggestion(selectedResult)) {
+                if(!map) return
+
+                map.flyTo({
+                    center: selectedResult.coordinates,
+                    zoom: 9
+                })
+
+                const trace = await fetchPlaneTrace(selectedResult.original_data.hex)
+                renderPlane(map, selectedResult, trace)
+                return
+            }
 
             let feature
             // TODO if suggestion is an airport 
